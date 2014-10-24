@@ -22,23 +22,13 @@
 ########################################################################################
 
 def cascade(
-            AltScenario,
             file_model_csv,             #the name of the reference file
-            file_stats,                 #the name of the stats file (if available)
-            stats_list,                 #a list of the stats files
             title,                      #the title of the graph to be generated
-            flood_Q,                    #the level of the flood line
-            file_name_list,             #list of file names
-            data_type_list,             #list of data_types associated with file names
-            breadth_str,                #scenarios to gray-shade on top of main scenario
-            breadth_str_2nd,            #second set of scenarios, to be red-shaaded
-            data_type = 'stream',       #the type of data
-            flood_Q_available = False,  #whether the flood level is available
+            path_write,                 #location for writing figures
+            data_type = 'default',      #the type of data
             Display = False,            #whether the graph is to be displayed(True) or saved as a PNG file(False)
-            stats_available = False,    #whether there is an associated stats file
-            SI = True                   #Whether the units are American Standard(True) or Metric(False)
             ):
-
+                
     """
     Make a cascade plot and associated side & bottom graphs to show time series
     of discharge.  Shade some of the lines with range of possible values for
@@ -59,117 +49,81 @@ def cascade(
     
     np.set_printoptions(precision=3) 
     
-    # This checks to see if there is anything in the second breadth column:
-    if isinstance(breadth_str_2nd, unicode):
-         request_2nd = True
-    else:
-        request_2nd = False
-        
-    # Generate list of model runs to be gray-shaded, and place comparitor into
-    # first slot in that list.
-    model_run, primary = md.define_model_run(file_model_csv)  #primary is comparitor
-    breadth_str = breadth_str.replace(" ","")
-    breadth_str = breadth_str.replace(primary+",","").replace(","+primary,"") #remove primary
-    breadth_str = primary + ',' + breadth_str #place primary in first slot
-    breadth = breadth_str.split(",")  # breadth is list of model runs that will be grey-shaded.
-    breadth_collection = collections.Counter(breadth)
-    breadth_all_collection = breadth_collection
-
-    if request_2nd:
-        breadth_str_2nd = breadth_str_2nd.replace(" ","")
-        breadth_str_2nd = breadth_str_2nd.replace(primary+",","").replace(","+primary,"") #remove primary
-        breadth_2nd = breadth_str_2nd.split(",")  # breadth_2nd is list of model runs that will be red-shaded.
-        breadth_2nd_collection = collections.Counter(breadth_2nd)
-        breadth_all_collection = (breadth_collection - breadth_2nd_collection) +\
-            breadth_2nd_collection
-    
-    file_model_csv_list = [file_model_csv.replace(primary, Case) for Case in breadth_all_collection]
-    file_model_csv_w_path_list = [cst.path_data + file_model_csv.replace(primary, Case) for Case in breadth_all_collection]
-    
-    file_stats_w_path = cst.path_auxilliary_files + file_stats
-    
     inum = 0
-    for Case in breadth_all_collection:
-        
-        file_model_csv = file_model_csv_list[inum]
-        file_model_csv_w_path = file_model_csv_w_path_list[inum]
-        file_breadth_list = []
-        for file_name in file_name_list:
-            file_breadth_list.append(file_name.replace(AltScenario,Case))
-    
+
 #       Collect data for plotting from csv file:
-        data_2D, data_2D_clipped, data_yr, time, data_length, num_water_yrs, \
-            start_year, end_year, graph_name_tmp, plot_structure, error_check, \
-            mass_balance_err_str, mean_Q \
-            \
-            = collect_data(
-                file_model_csv, file_model_csv_w_path, file_stats_w_path, \
-                data_type, data_type_list, file_breadth_list, \
-                stats_list, stats_available, SI \
-                )
+    data_2D, data_2D_clipped, data_yr, time, data_length, num_water_yrs, \
+        start_year, end_year, graph_name_tmp, plot_structure, error_check, \
+        mass_balance_err_str, mean_Q \
+        \
+        = collect_data(
+            file_model_csv, file_model_csv, file_stats_w_path, \
+            data_type, data_type_list, file_breadth_list, \
+            stats_list, stats_available, SI \
+            )
+        
+    data_set_rhs_1, data_set_rhs_2, data_set_rhs_3 \
+        = process_data(
+            data_2D, data_yr, num_water_yrs, data_length, \
+            data_type, data_type_list, SI,\
+            start_year, end_year
+            )
+
+    data_early, data_mid, data_late, window, averaging_window \
+        = process_bottom_strip(
+            data_2D, data_yr, num_water_yrs, data_length, \
+            data_type, data_type_list, SI,\
+            start_year, end_year
+            )
             
-        data_set_rhs_1, data_set_rhs_2, data_set_rhs_3 \
-            = process_data(
-                data_2D, data_yr, num_water_yrs, data_length, \
-                data_type, data_type_list, SI,\
-                start_year, end_year
-                )
+    if Case in breadth_collection:
+        try:
+          data_set_rhs_3_gray
+        except NameError:
+            data_set_rhs_3_gray = np.expand_dims(data_set_rhs_3,axis=1)
+            data_bottom_gray = np.column_stack((data_early,
+                                                  data_mid,
+                                                  data_late))
+        else:
+            data_set_rhs_3_gray = np.concatenate((data_set_rhs_3_gray, \
+                                np.expand_dims(data_set_rhs_3,axis=1)),axis=1)
+            data_bottom_gray = np.concatenate((data_bottom_gray, 
+                                               np.column_stack((data_early,
+                                                  data_mid,
+                                                  data_late))),axis=1)
+    if Case in breadth_2nd_collection:
+        try:
+             data_set_rhs_3_red
+        except NameError:
+            data_set_rhs_3_red = np.expand_dims(data_set_rhs_3,axis=1)
+            data_bottom_red_early = np.expand_dims(data_early,axis=1)
+            data_bottom_red_mid = np.expand_dims(data_mid,axis=1)
+            data_bottom_red_late = np.expand_dims(data_late,axis=1)
+        else:
+            data_set_rhs_3_red = np.concatenate((data_set_rhs_3_red, \
+                                np.expand_dims(data_set_rhs_3,axis=1)),axis=1)
+            data_bottom_red_early = np.concatenate((data_bottom_red_early, \
+                                np.expand_dims(data_early,axis=1)),axis=1)
+            data_bottom_red_mid = np.concatenate((data_bottom_red_mid, \
+                                np.expand_dims(data_mid,axis=1)),axis=1)
+            data_bottom_red_late = np.concatenate((data_bottom_red_late, \
+                                np.expand_dims(data_late,axis=1)),axis=1)
+       
+    if Case == primary: 
+        graph_name = graph_name_tmp
+        graph_title = cst.metadata.define_model_run(file_model_csv)[0]
+        file_title = file_model_csv
 
-        data_early, data_mid, data_late, window, averaging_window \
-            = process_bottom_strip(
-                data_2D, data_yr, num_water_yrs, data_length, \
-                data_type, data_type_list, SI,\
-                start_year, end_year
-                )
-                
-        if Case in breadth_collection:
-            try:
-              data_set_rhs_3_gray
-            except NameError:
-                data_set_rhs_3_gray = np.expand_dims(data_set_rhs_3,axis=1)
-                data_bottom_gray = np.column_stack((data_early,
-                                                      data_mid,
-                                                      data_late))
-            else:
-                data_set_rhs_3_gray = np.concatenate((data_set_rhs_3_gray, \
-                                    np.expand_dims(data_set_rhs_3,axis=1)),axis=1)
-                data_bottom_gray = np.concatenate((data_bottom_gray, 
-                                                   np.column_stack((data_early,
-                                                      data_mid,
-                                                      data_late))),axis=1)
-        if Case in breadth_2nd_collection:
-            try:
-                 data_set_rhs_3_red
-            except NameError:
-                data_set_rhs_3_red = np.expand_dims(data_set_rhs_3,axis=1)
-                data_bottom_red_early = np.expand_dims(data_early,axis=1)
-                data_bottom_red_mid = np.expand_dims(data_mid,axis=1)
-                data_bottom_red_late = np.expand_dims(data_late,axis=1)
-            else:
-                data_set_rhs_3_red = np.concatenate((data_set_rhs_3_red, \
-                                    np.expand_dims(data_set_rhs_3,axis=1)),axis=1)
-                data_bottom_red_early = np.concatenate((data_bottom_red_early, \
-                                    np.expand_dims(data_early,axis=1)),axis=1)
-                data_bottom_red_mid = np.concatenate((data_bottom_red_mid, \
-                                    np.expand_dims(data_mid,axis=1)),axis=1)
-                data_bottom_red_late = np.concatenate((data_bottom_red_late, \
-                                    np.expand_dims(data_late,axis=1)),axis=1)
-           
-        if Case == primary: 
-            graph_name = graph_name_tmp
-            graph_title = cst.metadata.define_model_run(file_model_csv)[0]
-            file_title = file_model_csv
-
-            # Save comparitor data in variables beginning with s
-            sdata_set_rhs_1, sdata_set_rhs_2, sdata_set_rhs_3, \
-                sdata_early, sdata_mid, sdata_late, \
-                sdata_2D, sdata_2D_clipped \
-            = data_set_rhs_1, data_set_rhs_2, data_set_rhs_3, \
-                data_early, data_mid, data_late, \
-                data_2D, data_2D_clipped 
-                
-        inum += 1
-             
+        # Save comparitor data in variables beginning with s
+        sdata_set_rhs_1, sdata_set_rhs_2, sdata_set_rhs_3, \
+            sdata_early, sdata_mid, sdata_late, \
+            sdata_2D, sdata_2D_clipped \
+        = data_set_rhs_1, data_set_rhs_2, data_set_rhs_3, \
+            data_early, data_mid, data_late, \
+            data_2D, data_2D_clipped 
+            
+    inum += 1
+         
     data_set_rhs_3_min_gray = np.amin(data_set_rhs_3_gray,1)
     data_set_rhs_3_max_gray = np.amax(data_set_rhs_3_gray,1)
     data_bottom_min_gray = np.amin(data_bottom_gray,1)
@@ -1561,6 +1515,19 @@ def AltScenName(file_model_csv):
      
     return Alternative_Scenario_Name
 
+def check_if_empty(element):
+    if element == '':
+        return False
+    else:
+        return True
+        
+def paths(master_file):
+    import xlrd
+    Path_book = xlrd.open_workbook(master_file)
+    Reference_path = tuple(Path_book.sheet_by_index(0).col_values(7))[7]
+    write_path = tuple(Path_book.sheet_by_index(0).col_values(7))[8]
+    return Reference_path, write_path
+
 
 ########################################################################################
 ########################################################################################
@@ -1572,7 +1539,7 @@ def AltScenName(file_model_csv):
 """
  This script generates a set of plots by first reading in the names of files
  and associated parameters from an xls file.  That file is called
- "cascade plot parameters.xls"
+ "master file.xls"
 """
 # kwargs:
 #   data_type = 'stream' (default), daminWdup, damin,
@@ -1584,59 +1551,34 @@ def AltScenName(file_model_csv):
 
 import constants as cst   # constants.py contains constants used here
 import xlrd
+# NAME OF MASTER FILE:
+master_file = 'master file.xls'
+path_data, path_write = paths(master_file)
+import metadata
 
 # Read a parameter file in xls format.
-cascade_plot_params = xlrd.open_workbook('cascade plot parameters.xls')
-
+cascade_plot_params = xlrd.open_workbook(master_file)
 file_model_csv = cascade_plot_params.sheet_by_index(0).col_values(0)[1:]        # name of data file for plot
 file_name_list = list(file_model_csv)
-file_stats = cascade_plot_params.sheet_by_index(0).col_values(1)[1:]            # name of stats file for plot (if any)
-title = cascade_plot_params.sheet_by_index(0).col_values(2)[1:]                 # title for plot
-ToBePlotted = cascade_plot_params.sheet_by_index(0).col_values(3)[1:]           # make this plot? True or False
-Display_v = cascade_plot_params.sheet_by_index(0).col_values(4)[1:]             # Display plot on screen (True) or as png file (False)
-flood_Q = cascade_plot_params.sheet_by_index(0).col_values(5)[1:]               # Flood discharge in cfs, if known
-flood_Q_available_v = cascade_plot_params.sheet_by_index(0).col_values(6)[1:]   # We know flood discharge (True/False)
-data_type_v = cascade_plot_params.sheet_by_index(0).col_values(7)[1:]           # What type of data is this? Stream, Dam, etc.
-stats_available_v = cascade_plot_params.sheet_by_index(0).col_values(8)[1:]     # The stats file is available (True/False)
-SI_v = cascade_plot_params.sheet_by_index(0).col_values(9)[1:]                  # Metric or standard units
-breadth_v = cascade_plot_params.sheet_by_index(0).col_values(10)[1:]            # Breadth of simulations to create gray-scale
-breadth_2nd_v = cascade_plot_params.sheet_by_index(0).col_values(11)[1:]        # Breadth of simulations to create gray-scale
+# Remove any names that are empty
+file_name_list = filter(check_if_empty, file_name_list)
+total_number_of_plots = len(file_name_list)
 
-flood_Q[:] = [element*cst.cfs_to_m3 for element in flood_Q]   # convert flood_Q from cfs to m3/s
-
-total_number_of_plots = len(file_model_csv)
-
-## DO NOT DELETE THE NEXT 6 LINES:
-## If you want to plot all scenarios, uncomment this line:
-#AltScenarioList = list(cst.metadata.AltScenarios[0:6])
-
-## If you only want to plot the scenario indicated in the master file, 
-##   uncomment this line:
-AltScenarioList = [str(file_model_csv[0]).split("_")[-2]]  #List of length 1
-## DO NOT DELETE THE TEXT ABOVE HERE ^^^^^
+title = cascade_plot_params.sheet_by_index(0).col_values(1)[1:total_number_of_plots+1]                 # title for plot
+ToBePlotted = cascade_plot_params.sheet_by_index(0).col_values(2)[1:total_number_of_plots+1]           # make this plot? True or False
+Display_v = cascade_plot_params.sheet_by_index(0).col_values(3)[1:total_number_of_plots+1]             # Display plot on screen (True) or as png file (False)\
+data_type_v = cascade_plot_params.sheet_by_index(0).col_values(4)[1:total_number_of_plots+1]
 
 # Make the plots.
-for AltScenario in AltScenarioList:
-    file_list_ToBeUsed = []
-    for file in file_name_list: 
-        file_list_ToBeUsed.append(file.replace('Ref', AltScenario))
-    for plot_number in range(total_number_of_plots):
-        if ToBePlotted[plot_number]:
-            file_name_ToBeUsed = file_list_ToBeUsed[plot_number]
-            cascade(
-                AltScenario,
-                file_name_ToBeUsed,
-                file_stats[plot_number],
-                list(file_stats),
-                title[plot_number],
-                flood_Q[plot_number],
-                file_name_list,
-                list(data_type_v),
-                breadth_str = breadth_v[plot_number],
-                breadth_str_2nd = breadth_2nd_v[plot_number],
-                Display = Display_v[plot_number],
-                data_type = data_type_v[plot_number],
-                flood_Q_available = flood_Q_available_v[plot_number],
-                stats_available = stats_available_v[plot_number],
-                SI = SI_v[plot_number]
-                )
+plot_number = -1
+for file in file_name_list: 
+    plot_number += 1
+    if ToBePlotted[plot_number]:
+        file_name_ToBeUsed = path_data + file_name_list[plot_number]
+        cascade(
+            file_name_ToBeUsed,
+            title[plot_number],
+            path_write,
+            Display = Display_v[plot_number],
+            data_type = data_type_v[plot_number],
+            )

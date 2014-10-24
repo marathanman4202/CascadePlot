@@ -15,17 +15,5 @@ F_to_C = 1.0/1.8        #Fahrenheit to Celcius
 in_to_mm = 25.4         #Inches to milimeters
 acft_to_m3 = 1233.48
 acftperday_to_m3s = acft_to_m3/86400.
-Willamette_Basin_area = 29728.*1.e6  # m2
-Willamette_Basin_area_at_PDX = 11200.*math.pow(5280.*.3048,2) #11200 sq mi @ PDX
 seconds_in_yr = 86400.*365.25
 
-def paths():
-    import xlrd
-    Path_book = xlrd.open_workbook('master file.xls')
-    Reference_path = tuple(Path_book.sheet_by_index(0).col_values(14))[7]
-    Auxilliary_path = tuple(Path_book.sheet_by_index(0).col_values(14))[8]
-    write_path = tuple(Path_book.sheet_by_index(0).col_values(14))[9]
-    return Reference_path, Auxilliary_path, write_path
-
-path_data, path_auxilliary_files, path_write = paths()
-import metadata
