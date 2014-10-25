@@ -16,4 +16,4 @@ in_to_mm = 25.4         #Inches to milimeters
 acft_to_m3 = 1233.48
 acftperday_to_m3s = acft_to_m3/86400.
 seconds_in_yr = 86400.*365.25
-
+days_in_yr = 365

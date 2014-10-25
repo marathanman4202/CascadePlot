@@ -3,6 +3,9 @@ def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv'):
     Reads sheet (excel, google, csv) file and produces 2-D matrix
     Returns 2D numpy array
     
+    If using google sheet, uncomment section "elif filetype == 'gsheet'
+    Need to add gspread from github, and import username and password.
+    
     file_w_path = filename and location of file. If google sheet, then key
     column = column number for data
     xcycle = how many numbers in each row
@@ -24,16 +27,16 @@ def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv'):
         sheetnum = 0
         rowstart = 1
         data_yr_tmp = np.array(workbook.sheet_by_index(sheetnum).col_values(column)[rowstart:])
-    elif filetype == 'gsheet':
-        import imp
-        import sys
-        sys.path.append('c:\\code\\gspread\\')  # location of gspread module
-        import gspread  # gspread is available at https://github.com/burnash/gspread
-        ui = imp.load_source('userinfo', 'C:\\keys\\userinfo.py')
-        gc = gspread.login(ui.userid,ui.pw)
-        sheet = gc.open_by_key(file_w_path).sheet1
-        data_str = np.array(sheet.get_all_values())
-        data_yr_tmp = data_str[1:,column].astype(np.float)
+#    elif filetype == 'gsheet':
+#        import imp
+#        import sys
+#        sys.path.append('c:\\code\\gspread\\')  # location of gspread module
+#        import gspread  # gspread is available at https://github.com/burnash/gspread
+#        ui = imp.load_source('userinfo', 'C:\\keys\\userinfo.py')
+#        gc = gspread.login(ui.userid,ui.pw)
+#        sheet = gc.open_by_key(file_w_path).sheet1
+#        data_str = np.array(sheet.get_all_values())
+#        data_yr_tmp = data_str[1:,column].astype(np.float)
 
     numdat = len(data_yr_tmp)
     data_yr = data_yr_tmp[skip:-((numdat-skip)%xcycle)] # start at skip + 1 and go as close to end of data as possible

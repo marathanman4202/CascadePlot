@@ -23,8 +23,9 @@
 
 def cascade(
             file_model_csv,             #the name of the reference file
+            column,
             title,                      #the title of the graph to be generated
-            path_write,                 #location for writing figures
+            graph_name_png,             #path & name of output png file
             data_type = 'default',      #the type of data
             Display = False,            #whether the graph is to be displayed(True) or saved as a PNG file(False)
             ):
@@ -46,12 +47,17 @@ def cascade(
     import metadata as md
     import collections
     from movingaverage import movingaverage
+    from matrix_from_xls import matrix_from_xls
     
     np.set_printoptions(precision=3) 
     
     inum = 0
 
 #       Collect data for plotting from csv file:
+    data_2D = matrix_from_xls(file_model_csv,column,cst.days_in_yr,0)
+    
+    assert False
+    
     data_2D, data_2D_clipped, data_yr, time, data_length, num_water_yrs, \
         start_year, end_year, graph_name_tmp, plot_structure, error_check, \
         mass_balance_err_str, mean_Q \
@@ -1524,8 +1530,8 @@ def check_if_empty(element):
 def paths(master_file):
     import xlrd
     Path_book = xlrd.open_workbook(master_file)
-    Reference_path = tuple(Path_book.sheet_by_index(0).col_values(7))[7]
-    write_path = tuple(Path_book.sheet_by_index(0).col_values(7))[8]
+    Reference_path = tuple(Path_book.sheet_by_index(0).col_values(8))[7]
+    write_path = tuple(Path_book.sheet_by_index(0).col_values(8))[8]
     return Reference_path, write_path
 
 
@@ -1542,12 +1548,7 @@ def paths(master_file):
  "master file.xls"
 """
 # kwargs:
-#   data_type = 'stream' (default), daminWdup, damin,
-#               damoutWdup, damout                    damWdup means file has duplicate data
-#   flood_Q_available = False (default), True
-#   Display = False (default), True
-#   stats_available = False (default), True
-#   SI = True (default), False
+#   data_type = 'default' (default)
 
 import constants as cst   # constants.py contains constants used here
 import xlrd
@@ -1564,10 +1565,12 @@ file_name_list = list(file_model_csv)
 file_name_list = filter(check_if_empty, file_name_list)
 total_number_of_plots = len(file_name_list)
 
-title = cascade_plot_params.sheet_by_index(0).col_values(1)[1:total_number_of_plots+1]                 # title for plot
-ToBePlotted = cascade_plot_params.sheet_by_index(0).col_values(2)[1:total_number_of_plots+1]           # make this plot? True or False
-Display_v = cascade_plot_params.sheet_by_index(0).col_values(3)[1:total_number_of_plots+1]             # Display plot on screen (True) or as png file (False)\
-data_type_v = cascade_plot_params.sheet_by_index(0).col_values(4)[1:total_number_of_plots+1]
+column = cascade_plot_params.sheet_by_index(0).col_values(1)[1:total_number_of_plots+1]                 
+title = cascade_plot_params.sheet_by_index(0).col_values(2)[1:total_number_of_plots+1]                 # title for plot
+ToBePlotted = cascade_plot_params.sheet_by_index(0).col_values(3)[1:total_number_of_plots+1]           # make this plot? True or False
+Display_v = cascade_plot_params.sheet_by_index(0).col_values(4)[1:total_number_of_plots+1]             # Display plot on screen (True) or as png file (False)\
+data_type_v = cascade_plot_params.sheet_by_index(0).col_values(5)[1:total_number_of_plots+1]           # type of data
+graph_name_v = cascade_plot_params.sheet_by_index(0).col_values(6)[1:total_number_of_plots+1]           # type of data
 
 # Make the plots.
 plot_number = -1
@@ -1575,10 +1578,13 @@ for file in file_name_list:
     plot_number += 1
     if ToBePlotted[plot_number]:
         file_name_ToBeUsed = path_data + file_name_list[plot_number]
+        graph_name = path_write + graph_name_v[plot_number]
+        col_num = int(column[plot_number])
         cascade(
             file_name_ToBeUsed,
+            col_num,
             title[plot_number],
-            path_write,
+            graph_name,
             Display = Display_v[plot_number],
             data_type = data_type_v[plot_number],
             )
