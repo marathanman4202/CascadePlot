@@ -62,11 +62,7 @@ def cascade(
         start_year, end_year, graph_name_tmp, plot_structure, error_check, \
         mass_balance_err_str, mean_Q \
         \
-        = collect_data(
-            file_model_csv, file_model_csv, file_stats_w_path, \
-            data_type, data_type_list, file_breadth_list, \
-            stats_list, stats_available, SI \
-            )
+        = collect_data(file_model_csv, data_type)
         
     data_set_rhs_1, data_set_rhs_2, data_set_rhs_3 \
         = process_data(
@@ -81,69 +77,9 @@ def cascade(
             data_type, data_type_list, SI,\
             start_year, end_year
             )
-            
-    if Case in breadth_collection:
-        try:
-          data_set_rhs_3_gray
-        except NameError:
-            data_set_rhs_3_gray = np.expand_dims(data_set_rhs_3,axis=1)
-            data_bottom_gray = np.column_stack((data_early,
-                                                  data_mid,
-                                                  data_late))
-        else:
-            data_set_rhs_3_gray = np.concatenate((data_set_rhs_3_gray, \
-                                np.expand_dims(data_set_rhs_3,axis=1)),axis=1)
-            data_bottom_gray = np.concatenate((data_bottom_gray, 
-                                               np.column_stack((data_early,
-                                                  data_mid,
-                                                  data_late))),axis=1)
-    if Case in breadth_2nd_collection:
-        try:
-             data_set_rhs_3_red
-        except NameError:
-            data_set_rhs_3_red = np.expand_dims(data_set_rhs_3,axis=1)
-            data_bottom_red_early = np.expand_dims(data_early,axis=1)
-            data_bottom_red_mid = np.expand_dims(data_mid,axis=1)
-            data_bottom_red_late = np.expand_dims(data_late,axis=1)
-        else:
-            data_set_rhs_3_red = np.concatenate((data_set_rhs_3_red, \
-                                np.expand_dims(data_set_rhs_3,axis=1)),axis=1)
-            data_bottom_red_early = np.concatenate((data_bottom_red_early, \
-                                np.expand_dims(data_early,axis=1)),axis=1)
-            data_bottom_red_mid = np.concatenate((data_bottom_red_mid, \
-                                np.expand_dims(data_mid,axis=1)),axis=1)
-            data_bottom_red_late = np.concatenate((data_bottom_red_late, \
-                                np.expand_dims(data_late,axis=1)),axis=1)
-       
-    if Case == primary: 
-        graph_name = graph_name_tmp
-        graph_title = cst.metadata.define_model_run(file_model_csv)[0]
-        file_title = file_model_csv
-
-        # Save comparitor data in variables beginning with s
-        sdata_set_rhs_1, sdata_set_rhs_2, sdata_set_rhs_3, \
-            sdata_early, sdata_mid, sdata_late, \
-            sdata_2D, sdata_2D_clipped \
-        = data_set_rhs_1, data_set_rhs_2, data_set_rhs_3, \
-            data_early, data_mid, data_late, \
-            data_2D, data_2D_clipped 
+                  
             
     inum += 1
-         
-    data_set_rhs_3_min_gray = np.amin(data_set_rhs_3_gray,1)
-    data_set_rhs_3_max_gray = np.amax(data_set_rhs_3_gray,1)
-    data_bottom_min_gray = np.amin(data_bottom_gray,1)
-    data_bottom_max_gray = np.amax(data_bottom_gray,1)
-
-    if request_2nd:
-        data_set_rhs_3_min_red = np.amin(data_set_rhs_3_red,1)
-        data_set_rhs_3_max_red = np.amax(data_set_rhs_3_red,1)
-        data_bottom_min_red_early = np.amin(data_bottom_red_early,1)
-        data_bottom_max_red_early = np.amax(data_bottom_red_early,1)
-        data_bottom_min_red_mid = np.amin(data_bottom_red_mid,1)
-        data_bottom_max_red_mid = np.amax(data_bottom_red_mid,1)
-        data_bottom_min_red_late = np.amin(data_bottom_red_late,1)
-        data_bottom_max_red_late = np.amax(data_bottom_red_late,1)
  
     data_set_rhs_1, data_set_rhs_2, data_set_rhs_3, \
         data_early, data_mid, data_late, \
