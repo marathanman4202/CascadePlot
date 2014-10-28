@@ -6,8 +6,9 @@
 # Some code written by Owen Haggerty, summer, 2014.
 # 
 # Reference as:
-# Haggerty, R. (2014), CascadePlot, a Python script for generation of  
-#   cascade plots and associated strip charts, 
+# Haggerty, R. (2014), CascadePlot: A Python script for generation of 
+#    cascade plots and associated strip charts, 
+#    https://github.com/marathanman4202/CascadePlot
 #
 # Python 2.7
 # Dependencies & libraries that need to be installed:
