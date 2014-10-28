@@ -6,6 +6,7 @@ Oregon State University,
 2014
 
 Code to generate cascade plots plus bottom and side strip charts from csv files of daily long-term data.  The scripts are based on a more specific application for the Willamette Water 2100 project at Oregon State University (http://water.oregonstate.edu/ww2100/).
+![Example of cascade plot](https://github.com/marathanman4202/CascadePlot/blob/master/WS1_discharge.png)
 
 The scripts may be reproduced and used as you like.  If you find them useful, please reference as follows.
 
