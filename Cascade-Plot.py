@@ -22,6 +22,30 @@
 ########################################################################################
 ########################################################################################
 
+def project_specifications(
+        rows_of_input_data_to_skip=0, annual_data='True', leap_yr='none',\
+        read_date_column=False, date_column = 0
+        ):
+    """
+    Set parameters and plot information for specific project
+    
+    start_year = first year of data (could be water year)
+    end_year = last year of data (could be water year)
+    day_of_year_start = first day of year to be plotted
+    annual_data = if data are yearly.  Default = True
+    leap_yr = option to treat leap-year. Default = none
+    """
+    import constants as cst   # constants.py contains constants used here
+    start_year = 1953
+    end_year = 2013
+    day_of_year_start = cst.day_of_year_oct1
+    
+    return \
+    start_year, end_year, day_of_year_start, \
+    rows_of_input_data_to_skip,\
+    annual_data, leap_yr, read_date_column, date_column
+    
+
 def get_labels(
         data_2D, num_yrs, data_type, metadata_txt
         ):
@@ -99,18 +123,20 @@ def cascade(
     import matplotlib.gridspec as gridspec
     from   mpl_toolkits.axes_grid1 import make_axes_locatable
     from matrix_from_xls import matrix_from_xls
-    
-    np.set_printoptions(precision=3) 
 
-# Set parameters and plot information here:
-    start_year = 1953
-    end_year = 2013
+# Set parameters and plot information for specific project:
+    start_year, end_year, day_of_year_start, \
+    rows_of_input_data_to_skip,\
+    annual_data, leap_yr, read_date_column, date_column \
+    = project_specifications()
+    
     num_years = end_year - start_year + 1
-    day_of_year_start = cst.day_of_year_oct1
+    np.set_printoptions(precision=3) 
 
 #   Collect data for plotting from csv or other spreadsheet files:
     data_2D = matrix_from_xls(
-            file_model_csv, column,cst.days_in_yr, 0
+            file_model_csv, column,cst.days_in_yr, 
+            rows_of_input_data_to_skip, read_date_column, date_column
             )
 
 ### UNIT CONVERSION:   

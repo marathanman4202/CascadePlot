@@ -1,4 +1,6 @@
-def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv',leap_yr='none'):
+def matrix_from_xls(
+    file_w_path,column,xcycle,skip,filetype='csv',data_type='annual', 
+    leap_yr='none', read_date_column=False, date_column=0):
     #Roy Haggerty, 2014
     """
     Reads sheet (excel, google, csv) file and produces 2-D matrix
@@ -13,6 +15,7 @@ def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv',leap_yr='none'
     xcycle = how many numbers in each row
     skip = how many numbers to skip before starting to read data
     filetype = type of file (kwarg). Default is csv.
+    leap_yr = 
     """
     
     import numpy as np
