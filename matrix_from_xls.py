@@ -72,7 +72,11 @@ def data_2D(data_yr_tmp,skip,xcycle):
     """
     import numpy as np
     numdat = len(data_yr_tmp)
-    data_yr = data_yr_tmp[skip:-((numdat-skip)%xcycle)] # start at skip + 1 and go as close to end of data as possible
+    if ((numdat-skip)%xcycle + 1) == 1:
+        data_yr = data_yr_tmp[skip:] # start at skip + 1 and go as close to end of data as possible
+    else:   
+        data_yr = data_yr_tmp[skip:-((numdat-skip)%xcycle + 1)] # start at skip + 1 and go as close to end of data as possible
+    print -((numdat-skip)%xcycle + 1)
     data_2D = np.reshape(np.array(data_yr), (-1,xcycle)) #2D matrix of data in numpy format
     return data_2D
     

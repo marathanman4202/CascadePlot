@@ -3,7 +3,6 @@
 File containing constants to be used in various WW2100 graphics scripts.
 """
 import datetime
-import math
 
 day_of_year_apr1 = 91
 day_of_year_oct1 = 274
