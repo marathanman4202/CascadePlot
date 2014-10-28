@@ -1,4 +1,4 @@
-def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv'):
+def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv',leap_yr='none'):
     #Roy Haggerty, 2014
     """
     Reads sheet (excel, google, csv) file and produces 2-D matrix
@@ -24,14 +24,14 @@ def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv'):
     if filetype == 'csv':
         data_tmp = np.array(np.genfromtxt(file_w_path, delimiter=',',skip_header=1)) # Read csv file
         data_yr_tmp = data_tmp[:,column]
-        return data_2D(data_yr_tmp,skip,xcycle)
+        return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
     elif filetype == 'xls':
         workbook = xlrd.open_workbook(file_w_path)
         # get 0th sheet, column, starting at 1st fow
         sheetnum = 0
         rowstart = 1
         data_yr_tmp = np.array(workbook.sheet_by_index(sheetnum).col_values(column)[rowstart:])
-        return data_2D(data_yr_tmp,skip,xcycle)
+        return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
     elif filetype == 'gsheet':
         import imp
         try:
@@ -64,9 +64,9 @@ def matrix_from_xls(file_w_path,column,xcycle,skip,filetype='csv'):
             print 'unknown error importing gspread module or reading data'
             raise Exception()
         else:
-            return data_2D(data_yr_tmp,skip,xcycle)
+            return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
 
-def data_2D(data_yr_tmp,skip,xcycle):
+def data_2D(data_yr_tmp,skip,xcycle,leap_yr='none'):
     """
     Convert column of numbers to 2D matrix
     """
@@ -76,7 +76,6 @@ def data_2D(data_yr_tmp,skip,xcycle):
         data_yr = data_yr_tmp[skip:] # start at skip + 1 and go as close to end of data as possible
     else:   
         data_yr = data_yr_tmp[skip:-((numdat-skip)%xcycle + 1)] # start at skip + 1 and go as close to end of data as possible
-    print -((numdat-skip)%xcycle + 1)
     data_2D = np.reshape(np.array(data_yr), (-1,xcycle)) #2D matrix of data in numpy format
     return data_2D
     

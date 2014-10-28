@@ -7,7 +7,7 @@ import datetime
 day_of_year_apr1 = 91
 day_of_year_oct1 = 274
 day_of_year_aug15 = 227
-day_of_year_start = 1
+day_of_year_jan1 = 1
 Jan1_1900 = datetime.date(1900,1,1)
 Jan1_2010 = datetime.date(2010,1,1)
 cfs_to_m3 = 0.0283168   #Cubic feet per second to cubic meters per second

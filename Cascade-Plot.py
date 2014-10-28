@@ -58,12 +58,19 @@ def get_labels(
         bottom_ylabel = '$Avg\,max\,T\,$ [$^{\circ}\mathrm{C}$]'
         subtitle = ''
                   
+    elif data_type == 'discharge' :
+        bottom_label = '$Month \, of \, Year$'
+        right_xlabel = '$Avg \, Q$ [m$^{\t{3}}$/s]'
+        cascade_ylabel = '$Year$'
+        bottom_ylabel = '$Avg \, Q$ [m$^{\t{3}}$/s]'
+        subtitle = ''
+                  
     else:
         print data_type, ' data_type not defined in get_labels function'
         raise Exception
     
     # Metadata for bottom right corner
-    metadata_bottomright = metadata_txt + '\n' \
+    metadata_bottomright = metadata_txt +  '\n' \
           + 'Graph generated on ' + str(datetime.date.today()) 
 
     return bottom_label, right_xlabel, cascade_ylabel, bottom_ylabel, \
@@ -96,19 +103,23 @@ def cascade(
     np.set_printoptions(precision=3) 
 
 # Set parameters and plot information here:
-    start_year = 1960
+    start_year = 1953
     end_year = 2013
     num_years = end_year - start_year + 1
+    day_of_year_start = cst.day_of_year_oct1
 
 #   Collect data for plotting from csv or other spreadsheet files:
     data_2D = matrix_from_xls(
             file_model_csv, column,cst.days_in_yr, 0
             )
-        
+
+### UNIT CONVERSION:   
+#    data_2D = data_2D*cst.cfs_to_m3 
+    
     data_set_rhs = process_data_rhs( 
             data_2D, num_years, data_type, start_year, end_year 
             )
-
+            
     data_early, data_mid, data_late = process_data_bottom(
             data_2D, num_years, data_type, start_year, end_year
             )
@@ -131,7 +142,7 @@ def cascade(
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','blue'],256)
         
     fig = plt.figure(1, figsize=(10,8))
-    width_ratios=[3.5, 1.5]
+    width_ratios=[3.5, 1.7]
     height_ratios = [4., 1.5]
     wspace = 0.4     # horizontal space btwn figs
     hspace = 0.12     # vertical space btwn figs
@@ -149,7 +160,7 @@ def cascade(
 
     ax = fig.add_subplot(gs1[0,0])
     p = plt.imshow(data_2D, origin='lower', cmap = cmap1, aspect='auto',                     # with revised color ramp
-                  extent=[cst.day_of_year_start, 365 + cst.day_of_year_start - 1 , start_year, end_year]) 
+                  extent=[day_of_year_start, 365 + day_of_year_start - 1 , start_year, end_year]) 
     month_labels(ax)
     ax.set_ylabel(cascade_ylabel, fontsize=14)
     ticks=np.arange(start_year,end_year,10)
@@ -166,11 +177,11 @@ def cascade(
     ##########################################################
     
     ax4 = fig.add_subplot(gs1[1,0], aspect = 'auto', sharex=ax)
-    ax4.plot(range(cst.day_of_year_start, 365 + cst.day_of_year_start),
+    ax4.plot(range(day_of_year_start, 365 + day_of_year_start),
              data_early, color="0.62", lw=1.5)
-    ax4.plot(range(cst.day_of_year_start, 365 + cst.day_of_year_start),
+    ax4.plot(range(day_of_year_start, 365 + day_of_year_start),
              data_mid, color="0.32", lw=1.5)
-    ax4.plot(range(cst.day_of_year_start, 365 + cst.day_of_year_start),
+    ax4.plot(range(day_of_year_start, 365 + day_of_year_start),
              data_late, color="0.", lw=1.5)
     month_labels(ax4)
     ax4.set_xlabel(bottom_label, fontsize=14)
@@ -215,7 +226,8 @@ def cascade(
     if data_type == 'default' or\
        data_type == 'precip' or\
        data_type == 'minT' or\
-       data_type == 'maxT':
+       data_type == 'maxT' or\
+       data_type == 'discharge':
         ax5.plot(data_set_rhs, range(start_year,end_year+1), color="0.35", lw=1.5)
         plt.xlabel(right_xlabel, fontsize = 14)
         
@@ -289,10 +301,9 @@ def process_data_rhs(data_2D, num_yrs,  \
     window_raw = np.array([])
     window_raw = np.append(window_raw,[n_take_k(averaging_window-1,i) for i in range(averaging_window)])
     window = window_raw / np.sum(window_raw)  # normalized weights
-    if data_type == 'default':        
+    if data_type == 'default' or\
+       data_type == 'discharge':        
         yearly_avg = [np.mean(data_2D[i,:]) for i in range(num_yrs)]  
-        print yearly_avg
-        print type(yearly_avg)
         yearly_avg = movingaverage(
             yearly_avg[:averaging_window] + yearly_avg + yearly_avg[-averaging_window:],
             window)[averaging_window:-averaging_window]
@@ -349,17 +360,20 @@ def process_data_bottom(
     # Prepend and append half of averaging window to data window so that moving average at early
     #   and late time are correct.
 
-    data_early = movingaverage([np.mean(data_2D[0:19,i]) for i in range(365-averaging_window/2 , 364)] +
-                               [np.mean(data_2D[0:19,i]) for i in range(365)] +
-                               [np.mean(data_2D[0:19,i]) for i in range(0 , averaging_window/2)],
+    one_third = (end_year - start_year)/3
+    two_thirds = 2*(end_year - start_year)/3
+
+    data_early = movingaverage([np.mean(data_2D[0:one_third,i]) for i in range(365-averaging_window/2 , 364)] +
+                               [np.mean(data_2D[0:one_third,i]) for i in range(365)] +
+                               [np.mean(data_2D[0:one_third,i]) for i in range(0 , averaging_window/2)],
                                window)[averaging_window/2 : 365+averaging_window/2]
-    data_mid   = movingaverage([np.mean(data_2D[20:39,i]) for i in range(365-averaging_window/2 , 364)] +
-                               [np.mean(data_2D[20:39,i]) for i in range(365)] +
-                               [np.mean(data_2D[20:39,i]) for i in range(0 , averaging_window/2)],
+    data_mid   = movingaverage([np.mean(data_2D[one_third+1:two_thirds,i]) for i in range(365-averaging_window/2 , 364)] +
+                               [np.mean(data_2D[one_third+1:two_thirds,i]) for i in range(365)] +
+                               [np.mean(data_2D[one_third+1:two_thirds,i]) for i in range(0 , averaging_window/2)],
                                window)[averaging_window/2 : 365+averaging_window/2]
-    data_late  = movingaverage([np.mean(data_2D[40:,i]) for i in range(365-averaging_window/2 , 364)] +
-                               [np.mean(data_2D[40:,i]) for i in range(365)] +
-                               [np.mean(data_2D[40:,i]) for i in range(0 , averaging_window/2)],
+    data_late  = movingaverage([np.mean(data_2D[two_thirds+1:,i]) for i in range(365-averaging_window/2 , 364)] +
+                               [np.mean(data_2D[two_thirds+1:,i]) for i in range(365)] +
+                               [np.mean(data_2D[two_thirds+1:,i]) for i in range(0 , averaging_window/2)],
                                window)[averaging_window/2 : 365+averaging_window/2]
                                
     return data_early, data_mid, data_late       
