@@ -41,8 +41,8 @@ def project_specifications(
     day_of_year_start = cst.day_of_year_oct1
         
     read_date_column = True
-    leap_yr = 'remove'
-
+    date_column = 0
+    leap_yr = 'none'
     
     return \
     start_year, end_year, day_of_year_start, \
@@ -143,7 +143,6 @@ def cascade(
     
     num_years = end_year - start_year + 1
     np.set_printoptions(precision=3) 
-    print leap_yr, read_date_column, date_column
 
 #   Collect data for plotting from csv or other spreadsheet files:
     data_2D = matrix_from_xls(
