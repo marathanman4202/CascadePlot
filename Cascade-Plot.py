@@ -39,6 +39,10 @@ def project_specifications(
     start_year = 1953
     end_year = 2013
     day_of_year_start = cst.day_of_year_oct1
+        
+    read_date_column = True
+    leap_yr = 'remove'
+
     
     return \
     start_year, end_year, day_of_year_start, \
@@ -66,6 +70,13 @@ def get_labels(
         right_xlabel = '$Ann \, Precip\,$ [mm]'
         cascade_ylabel = '$Year$'
         bottom_ylabel = '$Avg \, Daily \,$ [mm]'
+        subtitle = ''
+                  
+    elif data_type == 'meanT' :
+        bottom_label = '$Month \, of \, Year$'
+        right_xlabel = '$Ann\,mean\,T\,$ [$^{\circ}\mathrm{C}$]'
+        cascade_ylabel = '$Year$'
+        bottom_ylabel = '$Avg\,mean\,T\,$ [$^{\circ}\mathrm{C}$]'
         subtitle = ''
                   
     elif data_type == 'minT' :
@@ -132,11 +143,13 @@ def cascade(
     
     num_years = end_year - start_year + 1
     np.set_printoptions(precision=3) 
+    print leap_yr, read_date_column, date_column
 
 #   Collect data for plotting from csv or other spreadsheet files:
     data_2D = matrix_from_xls(
             file_model_csv, column,cst.days_in_yr, 
-            rows_of_input_data_to_skip, read_date_column, date_column
+            rows_of_input_data_to_skip, leap_yr=leap_yr, 
+            read_date_column=read_date_column, date_column=date_column
             )
 
 ### UNIT CONVERSION:   
@@ -251,6 +264,7 @@ def cascade(
     plt.yticks(ticks, fontsize=14)
     if data_type == 'default' or\
        data_type == 'precip' or\
+       data_type == 'meanT' or\
        data_type == 'minT' or\
        data_type == 'maxT' or\
        data_type == 'discharge':
@@ -328,7 +342,8 @@ def process_data_rhs(data_2D, num_yrs,  \
     window_raw = np.append(window_raw,[n_take_k(averaging_window-1,i) for i in range(averaging_window)])
     window = window_raw / np.sum(window_raw)  # normalized weights
     if data_type == 'default' or\
-       data_type == 'discharge':        
+       data_type == 'discharge' or\
+       data_type == 'meanT':        
         yearly_avg = [np.mean(data_2D[i,:]) for i in range(num_yrs)]  
         yearly_avg = movingaverage(
             yearly_avg[:averaging_window] + yearly_avg + yearly_avg[-averaging_window:],

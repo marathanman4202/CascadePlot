@@ -27,14 +27,26 @@ def matrix_from_xls(
     if filetype == 'csv':
         data_tmp = np.array(np.genfromtxt(file_w_path, delimiter=',',skip_header=1)) # Read csv file
         data_yr_tmp = data_tmp[:,column]
-        return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
+        print leap_yr
+        print read_date_column
+        print date_column
+        assert False
+        if read_date_column:
+            dates = data_tmp[:,date_column]
+            return data_2D(data_yr_tmp,skip,xcycle,leap_yr,dates)
+        else:
+            return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
     elif filetype == 'xls':
         workbook = xlrd.open_workbook(file_w_path)
         # get 0th sheet, column, starting at 1st fow
         sheetnum = 0
         rowstart = 1
         data_yr_tmp = np.array(workbook.sheet_by_index(sheetnum).col_values(column)[rowstart:])
-        return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
+        if read_date_column:
+            dates = np.array(workbook.sheet_by_index(sheetnum).col_values(date_column)[rowstart:])
+            return data_2D(data_yr_tmp,skip,xcycle,leap_yr,dates)
+        else:
+            return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
     elif filetype == 'gsheet':
         import imp
         try:
@@ -44,6 +56,11 @@ def matrix_from_xls(
             sheet = gc.open_by_key(file_w_path).sheet1
             data_str = np.array(sheet.get_all_values())
             data_yr_tmp = data_str[1:,column].astype(np.float)
+            if read_date_column:
+                dates = data_str[1:,date_column].astype(str)
+                return data_2D(data_yr_tmp,skip,xcycle,leap_yr,dates)
+            else:
+                return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
         except ImportError:
             print '\nGSPREAD library is not available.'
             print 'make sure gspread is loaded and placed in the path'
@@ -69,11 +86,29 @@ def matrix_from_xls(
         else:
             return data_2D(data_yr_tmp,skip,xcycle,leap_yr)
 
-def data_2D(data_yr_tmp,skip,xcycle,leap_yr='none'):
+def data_2D(data_yr_tmp,skip,xcycle,leap_yr='none',dates='none'):
     """
     Convert column of numbers to 2D matrix
     """
     import numpy as np
+    import pandas as pd
+    
+    if leap_yr == 'remove':
+        ts = pd.Series(data_yr_tmp, dates)
+        ts = ts.convert_objects(convert_numeric=True)
+                
+#        dfday = df.resample('D', how='mean')
+        #print dfday.head()
+        
+        #tsrf=tsr.fillna(method='backfill')
+                
+        leapdays=leapdays=[pd.datetime(i,2,29) for i in range(1904,2017,4)] #list of leap days
+        
+        tsLD=ts[ts.index.isin(leapdays)]
+        if tsLD.empty is False: 
+            ts = ts[ts.index - tsLD.index]
+        data_yr_tmp = np.array(ts)
+    
     numdat = len(data_yr_tmp)
     if ((numdat-skip)%xcycle + 1) == 1:
         data_yr = data_yr_tmp[skip:] # start at skip + 1 and go as close to end of data as possible
