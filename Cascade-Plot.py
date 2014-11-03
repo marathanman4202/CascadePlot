@@ -36,13 +36,13 @@ def project_specifications(
     leap_yr = option to treat leap-year. Default = none
     """
     import constants as cst   # constants.py contains constants used here
-    start_year = 1953
+    start_year = 2004
     end_year = 2013
     day_of_year_start = cst.day_of_year_oct1
         
     read_date_column = True
     date_column = 0
-    leap_yr = 'none'
+    leap_yr = 'remove'
     
     return \
     start_year, end_year, day_of_year_start, \
@@ -99,6 +99,13 @@ def get_labels(
         cascade_ylabel = '$Year$'
         bottom_ylabel = '$Avg \, Q$ [m$^{\t{3}}$/s]'
         subtitle = ''
+
+    elif data_type == 'chem' :
+        bottom_label = '$Month \, of \, Year$'
+        right_xlabel = '$Avg \,$ '
+        cascade_ylabel = '$Year$'
+        bottom_ylabel = '$Avg \,$'
+        subtitle = ''
                   
     else:
         print data_type, ' data_type not defined in get_labels function'
@@ -106,6 +113,8 @@ def get_labels(
     
     # Metadata for bottom right corner
     metadata_bottomright = metadata_txt +  '\n' \
+          + 'HJA NSF grant DEB-0832652 and' +  '\n' \
+          + 'Roy Haggerty NSF grant EAR-1417603' + '\n'\
           + 'Graph generated on ' + str(datetime.date.today()) 
 
     return bottom_label, right_xlabel, cascade_ylabel, bottom_ylabel, \
@@ -134,6 +143,8 @@ def cascade(
     import matplotlib.gridspec as gridspec
     from   mpl_toolkits.axes_grid1 import make_axes_locatable
     from matrix_from_xls import matrix_from_xls
+    
+    np.set_printoptions(precision=3) 
 
 # Set parameters and plot information for specific project:
     start_year, end_year, day_of_year_start, \
@@ -142,13 +153,16 @@ def cascade(
     = project_specifications()
     
     num_years = end_year - start_year + 1
-    np.set_printoptions(precision=3) 
 
 #   Collect data for plotting from csv or other spreadsheet files:
     data_2D = matrix_from_xls(
             file_model_csv, column,cst.days_in_yr, 
-            rows_of_input_data_to_skip, leap_yr=leap_yr, 
-            read_date_column=read_date_column, date_column=date_column
+            day_of_year_start = day_of_year_start,
+            start_year = start_year,
+            skip = rows_of_input_data_to_skip, 
+            leap_yr = leap_yr,
+            read_date_column = read_date_column, 
+            date_column = date_column
             )
 
 ### UNIT CONVERSION:   
@@ -174,7 +188,7 @@ def cascade(
 
     if data_type == 'default' or data_type == 'precip':
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','blue'],256)
-    elif data_type == 'minT' or data_type == 'maxT':
+    elif data_type == 'minT' or data_type == 'maxT' or data_type =='meanT':
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white',(0.9,0.1,0.1)],256)
     else:
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','blue'],256)
@@ -201,7 +215,13 @@ def cascade(
                   extent=[day_of_year_start, 365 + day_of_year_start - 1 , start_year, end_year]) 
     month_labels(ax)
     ax.set_ylabel(cascade_ylabel, fontsize=14)
-    ticks=np.arange(start_year,end_year,10)
+    if (end_year-start_year)/10 > 5:
+        tick_sep_yrs = 10
+    elif (end_year-start_year)/10 <= 5:
+        tick_sep_yrs = 5
+    if (end_year - start_year)<12:
+        tick_sep_yrs = 1
+    ticks=np.arange(start_year,end_year,tick_sep_yrs)
     plt.yticks(ticks, fontsize=14)
     plt.title(subtitle,fontsize=12)  # could put a subtitle above cascade plot
     plt.suptitle(title, fontsize = 18)
@@ -266,7 +286,8 @@ def cascade(
        data_type == 'meanT' or\
        data_type == 'minT' or\
        data_type == 'maxT' or\
-       data_type == 'discharge':
+       data_type == 'discharge' or\
+       data_type == 'chem':
         ax5.plot(data_set_rhs, range(start_year,end_year+1), color="0.35", lw=1.5)
         plt.xlabel(right_xlabel, fontsize = 14)
         
@@ -336,13 +357,14 @@ def process_data_rhs(data_2D, num_yrs,  \
     ##########################################################
     data_set_rhs = np.empty([1])
 
-    averaging_window = 7
+    averaging_window = 3
     window_raw = np.array([])
     window_raw = np.append(window_raw,[n_take_k(averaging_window-1,i) for i in range(averaging_window)])
     window = window_raw / np.sum(window_raw)  # normalized weights
     if data_type == 'default' or\
        data_type == 'discharge' or\
-       data_type == 'meanT':        
+       data_type == 'meanT' or\
+       data_type == 'chem':        
         yearly_avg = [np.mean(data_2D[i,:]) for i in range(num_yrs)]  
         yearly_avg = movingaverage(
             yearly_avg[:averaging_window] + yearly_avg + yearly_avg[-averaging_window:],
