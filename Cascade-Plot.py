@@ -221,6 +221,7 @@ def cascade(
         tick_sep_yrs = 5
     if (end_year - start_year)<12:
         tick_sep_yrs = 1
+    plt.ticklabel_format(axis='y',style='plain',useOffset=False)
     ticks=np.arange(start_year,end_year,tick_sep_yrs)
     plt.yticks(ticks, fontsize=14)
     plt.title(subtitle,fontsize=12)  # could put a subtitle above cascade plot
@@ -278,7 +279,6 @@ def cascade(
 
     xloc = plt.MaxNLocator(max_xticks)
     ax5.xaxis.set_major_locator(xloc)
-    plt.ylim(start_year,end_year)
     ax5.yaxis.tick_right()
     plt.yticks(ticks, fontsize=14)
     if data_type == 'default' or\
