@@ -36,8 +36,10 @@ def project_specifications(
     leap_yr = option to treat leap-year. Default = none
     """
     import constants as cst   # constants.py contains constants used here
-    start_year = 2004
-    end_year = 2013
+#    start_year = 2004
+#    end_year = 2013
+    start_year = 1959
+    end_year = 2011
     day_of_year_start = cst.day_of_year_oct1
         
     read_date_column = True
@@ -212,7 +214,8 @@ def cascade(
 
     ax = fig.add_subplot(gs1[0,0])
     p = plt.imshow(data_2D, origin='lower', cmap = cmap1, aspect='auto',                     # with revised color ramp
-                  extent=[day_of_year_start, 365 + day_of_year_start - 1 , start_year, end_year]) 
+                  extent=[day_of_year_start, 365 + day_of_year_start - 1 , start_year, end_year+1]) 
+    p.set_interpolation('nearest')
     month_labels(ax)
     ax.set_ylabel(cascade_ylabel, fontsize=14)
     if (end_year-start_year)/10 > 5:

@@ -140,13 +140,22 @@ def timeseries(ts,leap_yr='none',missing_data='pad',
     import numpy as np
     import pandas as pd
     
-    ts = ts.reindex(pd.date_range(ts.index[0]-pd.offsets.Day(21), ts.index[-1]),method='pad')
+    try:
+    #    ts = ts.reindex(pd.date_range(ts.index[0]-pd.offsets.Day(21), ts.index[-1]),method='pad')
+        ts = ts.reindex(pd.date_range(ts.index[0], ts.index[-1]),method='pad')  # if there are any missing days, this will catch them
+    except ValueError:
+        pass
     
     if leap_yr == 'none':
         pass
     elif leap_yr == 'remove':
         leapdays=leapdays=[pd.datetime(i,2,29) for i in range(1904,2017,4)] #list of leap days
         tsLD=ts[ts.index.isin(leapdays)]
+        print tsLD.index
+        print ts.index
+        print ts.index - tsLD.index
+        ts1 = ts[0]
+        print ts[ts.index[0:3]-ts.index[1:2]]
         if tsLD.empty is False: 
             ts = ts[ts.index - tsLD.index]
     else:
