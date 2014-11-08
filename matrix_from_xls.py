@@ -149,21 +149,24 @@ def timeseries(ts,leap_yr='none',missing_data='pad',
     if leap_yr == 'none':
         pass
     elif leap_yr == 'remove':
-        leapdays=leapdays=[pd.datetime(i,2,29) for i in range(1904,2017,4)] #list of leap days
+        leapdays=[pd.datetime(i,2,29) for i in range(1904,2017,4)] #list of leap days
         tsLD=ts[ts.index.isin(leapdays)]
-        print tsLD.index
-        print ts.index
-        print ts.index - tsLD.index
-        ts1 = ts[0]
-        print ts[ts.index[0:3]-ts.index[1:2]]
         if tsLD.empty is False: 
             ts = ts[ts.index - tsLD.index]
+            try:
+                ts = ts[ts.index - tsLD.index]
+            except ValueError:
+                print '************'
+                print '  A common cause of this error is duplicate date stamps'
+                print '  in the data file.'
+                print '************'
+                raise ValueError('cannot reindex from a duplicate axis')
     else:
         print 'leap_yr contains unknown option'
         raise Exception()
     ts = ts.fillna(method=missing_data)
     if start_date != 'none':
-        ts = ts[start_date:]
+        ts = ts.loc[start_date:]
     data_yr_tmp = np.array(ts)
     
     return data_yr_tmp

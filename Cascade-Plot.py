@@ -38,8 +38,10 @@ def project_specifications(
     import constants as cst   # constants.py contains constants used here
 #    start_year = 2004
 #    end_year = 2013
+#    start_year = 1899
+#    end_year = 2011
     start_year = 1959
-    end_year = 2011
+    end_year = 2012
     day_of_year_start = cst.day_of_year_oct1
         
     read_date_column = True
@@ -72,6 +74,13 @@ def get_labels(
         right_xlabel = '$Ann \, Precip\,$ [mm]'
         cascade_ylabel = '$Year$'
         bottom_ylabel = '$Avg \, Daily \,$ [mm]'
+        subtitle = ''
+                  
+    elif data_type == 'PAR' :
+        bottom_label = '$Month \, of \, Year$'
+        right_xlabel = '$Avg \, PAR$'
+        cascade_ylabel = '$Year$'
+        bottom_ylabel = '$Avg \, PAR$'
         subtitle = ''
                   
     elif data_type == 'meanT' :
@@ -170,9 +179,15 @@ def cascade(
 ### UNIT CONVERSION:   
 #    data_2D = data_2D*cst.cfs_to_m3 
     
-    data_set_rhs = process_data_rhs( 
-            data_2D, num_years, data_type, start_year, end_year 
-            )
+    try:
+        data_set_rhs = process_data_rhs( 
+                data_2D, num_years, data_type, start_year, end_year 
+                )
+    except IndexError:
+        print '************'
+        print '  A common cause of this error is incorrect start_year or end_year.'
+        print '************'
+        raise IndexError()
             
     data_early, data_mid, data_late = process_data_bottom(
             data_2D, num_years, data_type, start_year, end_year
@@ -190,7 +205,8 @@ def cascade(
 
     if data_type == 'default' or data_type == 'precip':
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','blue'],256)
-    elif data_type == 'minT' or data_type == 'maxT' or data_type =='meanT':
+    elif data_type == 'minT' or data_type == 'maxT' or data_type =='meanT' or\
+        data_type =='PAR':
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white',(0.9,0.1,0.1)],256)
     else:
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','blue'],256)
@@ -290,7 +306,8 @@ def cascade(
        data_type == 'minT' or\
        data_type == 'maxT' or\
        data_type == 'discharge' or\
-       data_type == 'chem':
+       data_type == 'chem' or\
+       data_type == 'PAR':
         ax5.plot(data_set_rhs, range(start_year,end_year+1), color="0.35", lw=1.5)
         plt.xlabel(right_xlabel, fontsize = 14)
         
@@ -367,7 +384,8 @@ def process_data_rhs(data_2D, num_yrs,  \
     if data_type == 'default' or\
        data_type == 'discharge' or\
        data_type == 'meanT' or\
-       data_type == 'chem':        
+       data_type == 'chem' or\
+       data_type == 'PAR':        
         yearly_avg = [np.mean(data_2D[i,:]) for i in range(num_yrs)]  
         yearly_avg = movingaverage(
             yearly_avg[:averaging_window] + yearly_avg + yearly_avg[-averaging_window:],
