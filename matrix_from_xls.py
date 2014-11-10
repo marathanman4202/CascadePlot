@@ -1,7 +1,7 @@
 def matrix_from_xls(
     file_w_path,
     column,
-    xcycle,
+    xcycle = 365,
     day_of_year_start=1, 
     start_year = 2000,
     skip=0,
@@ -30,20 +30,6 @@ def matrix_from_xls(
     import numpy as np
     import xlrd
     import pandas as pd
-    import datetime as dt
-    
-    try:
-        assert day_of_year_start == 1 or skip == 0
-    except AssertionError:
-        print 'either skip must = 0 or day_of_year_start must = 1'
-        raise AssertionError()
-    else:
-        if day_of_year_start == 1:
-            skip_rows_by_date = False
-            start_date = start_date = dt.datetime(start_year-1, 1, 1) ##CAREFUL HERE.  For some apps, the start_year could be start_year without subtraction of 1
-        else:
-            skip_rows_by_date = True
-            start_date = dt.datetime(start_year-1, 1, 1) + dt.timedelta(day_of_year_start - 1) ##CAREFUL HERE.  For some apps, the start_year could be start_year without subtraction of 1
     
     if read_date_column:
         data_col_num = column - date_column - 1
@@ -55,26 +41,33 @@ def matrix_from_xls(
         if read_date_column:
             df = pd.read_csv(file_w_path, index_col=date_column, parse_dates=[date_column])
             df = df.convert_objects(convert_numeric=True)
+            df.index  = pd.to_datetime(df.index.date)  #
             ts = pd.Series(df.iloc[:,data_col_num],df.index)
+            start_date, start_year, end_year \
+                        = start_end_info(ts, skip, day_of_year_start, xcycle)
             data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
-                        skip_rows_by_date = skip_rows_by_date,
                         start_date = start_date)
+            return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
         else:
             data_tmp = np.array(np.genfromtxt(file_w_path, delimiter=',',skip_header=1)) # Read csv file
             data_yr_tmp = data_tmp[:,column]
-        return data_2D(data_yr_tmp,skip,xcycle)
+            return data_2D(data_yr_tmp,skip,xcycle)
     elif filetype == 'xls':
         workbook = xlrd.open_workbook(file_w_path)
-        # get 0th sheet, column, starting at 1st fow
+        # get 0th sheet, column, starting at 1st row
         sheetnum = 0
         rowstart = 1
-        data_yr_tmp = np.array(workbook.sheet_by_index(sheetnum).col_values(column)[rowstart:])
         if read_date_column:
-            dates = np.array(workbook.sheet_by_index(sheetnum).col_values(date_column)[rowstart:])
-            return data_2D(data_yr_tmp,skip,xcycle)
+            df = pd.read_excel(file_w_path, sheetname=sheetnum, header=rowstart-1, index_col=date_column)
+            df = df.convert_objects(convert_numeric=True)
+            df.index  = pd.to_datetime(df.index)
+            ts = pd.Series(df.iloc[:,data_col_num],df.index)
+            data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
+                        start_date = start_date)
+            return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
         else:
-            pass
-        return data_2D(data_yr_tmp,skip,xcycle)
+            data_yr_tmp = np.array(workbook.sheet_by_index(sheetnum).col_values(column)[rowstart:])
+            return data_2D(data_yr_tmp,skip,xcycle)
     elif filetype == 'gsheet':
         import imp
         try:
@@ -82,13 +75,22 @@ def matrix_from_xls(
             ui = imp.load_source('userinfo', 'C:\\keys\\userinfo.py')
             gc = gspread.login(ui.userid,ui.pw)
             sheet = gc.open_by_key(file_w_path).sheet1
-            data_str = np.array(sheet.get_all_values())
-            data_yr_tmp = data_str[1:,column].astype(np.float)
             if read_date_column:
+                data_str = np.array(sheet.get_all_values())
                 dates = data_str[1:,date_column].astype(str)
+                df = pd.DataFrame(data_str[1:,date_column+1:],index=pd.to_datetime(dates))
+                df = df.convert_objects(convert_numeric=True)
+                print df.head()
+                print df.index
+                print data_col_num
+                ts = pd.Series(df.iloc[:,data_col_num],df.index)
+                data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
+                            start_date = start_date)
+                return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
             else:
-                pass
-            return data_2D(data_yr_tmp,skip,xcycle)
+                data_str = np.array(sheet.get_all_values())
+                data_yr_tmp = data_str[1:,column].astype(np.float)
+                return data_2D(data_yr_tmp,skip,xcycle)
         except ImportError:
             print '\nGSPREAD library is not available.'
             print 'make sure gspread is loaded and placed in the path'
@@ -111,9 +113,46 @@ def matrix_from_xls(
         except:
             print 'unknown error importing gspread module or reading data'
             raise Exception()
-        else:
-            return data_2D(data_yr_tmp,skip,xcycle)  # Not sure if this is needed here
 
+def start_end_info(ts, skip, day_of_year_start, xcycle):
+    """
+    Calculate start and end information needed
+    """
+    import pandas as pd
+    import datetime as dt
+    import constants as cst
+    
+    try:
+        assert day_of_year_start == 1 or skip == 0
+    except AssertionError:
+        print 'either skip must = 0 or day_of_year_start must = 1'
+        raise AssertionError()
+    else:
+        first_day = ts.index[0].dayofyear
+        if day_of_year_start + skip < first_day:
+            start_year = ts.index[0].year + 2
+            start_date = pd.to_datetime(dt.datetime(start_year-1, 1, 1) + dt.timedelta(day_of_year_start - 1 + skip))
+        else:
+            start_year = ts.index[0].year + 1
+            start_date = pd.to_datetime(dt.datetime(start_year-1, 1, 1) + dt.timedelta(day_of_year_start - 1 + skip)) ##CAREFUL HERE.  For some apps, the start_year could be start_year without subtraction of 1
+    
+        # fill dates for purpose of calculating num_years. tstmp contains all of the dates
+        try:
+           tstmp = ts.reindex(pd.date_range(ts.index[0], ts.index[-1]),method='pad')  # if there are any missing days, this will catch them
+        except ValueError:
+            tstmp = ts
+        # need to count the damned leap years        
+        leapdays=[pd.datetime(i,2,29) for i in range(1904,2017,4)] #list of leap days
+        tsLD=tstmp[tstmp.index.isin(leapdays)]
+        num_LD = len(tsLD)  # num of leap days
+        num_years = \
+            int(((tstmp[start_date:].index[-1] - tstmp[start_date:].index[0]).days-num_LD+1)/cst.days_in_yr) - 1
+        end_year = start_year + num_years
+           
+        return start_date, start_year, end_year
+        
+    return start_date, start_year, end_year
+    
 def data_2D(data_yr_tmp,skip,xcycle):
     """
     Convert column of numbers to 2D matrix
@@ -128,8 +167,7 @@ def data_2D(data_yr_tmp,skip,xcycle):
     data_2D = np.reshape(np.array(data_yr), (-1,xcycle)) #2D matrix of data in numpy format
     return data_2D
     
-def timeseries(ts,leap_yr='none',missing_data='pad',
-               skip_rows_by_date = False, start_date = 'none'):
+def timeseries(ts,leap_yr='none',missing_data='pad', start_date = 'none'):
     """
     Deal with leap years and data gaps.
     

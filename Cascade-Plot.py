@@ -23,7 +23,7 @@
 ########################################################################################
 
 def project_specifications(
-        rows_of_input_data_to_skip=0, annual_data='True', leap_yr='none',\
+        rows_of_input_data_to_skip=0, filetype='csv', annual_data='True', leap_yr='none',\
         read_date_column=False, date_column = 0
         ):
     """
@@ -36,23 +36,21 @@ def project_specifications(
     leap_yr = option to treat leap-year. Default = none
     """
     import constants as cst   # constants.py contains constants used here
-#    start_year = 2004
+# Need to specify start_year and end_year if data do not contain dates. 
+#      i.e., if read_date_column = False
+#    start_year = 1998
 #    end_year = 2013
-#    start_year = 1899
-#    end_year = 2011
-    start_year = 1959
-    end_year = 2012
     day_of_year_start = cst.day_of_year_oct1
         
     read_date_column = True
-    date_column = 0
+#    date_column = 1
+#    filetype = 'gsheet'
     leap_yr = 'remove'
     
     return \
-    start_year, end_year, day_of_year_start, \
-    rows_of_input_data_to_skip,\
+    day_of_year_start,\
+    rows_of_input_data_to_skip,filetype,\
     annual_data, leap_yr, read_date_column, date_column
-    
 
 def get_labels(
         data_2D, num_yrs, data_type, metadata_txt
@@ -158,23 +156,37 @@ def cascade(
     np.set_printoptions(precision=3) 
 
 # Set parameters and plot information for specific project:
-    start_year, end_year, day_of_year_start, \
-    rows_of_input_data_to_skip,\
+    day_of_year_start,\
+    rows_of_input_data_to_skip, filetype,\
     annual_data, leap_yr, read_date_column, date_column \
     = project_specifications()
     
-    num_years = end_year - start_year + 1
-
 #   Collect data for plotting from csv or other spreadsheet files:
-    data_2D = matrix_from_xls(
-            file_model_csv, column,cst.days_in_yr, 
-            day_of_year_start = day_of_year_start,
-            start_year = start_year,
-            skip = rows_of_input_data_to_skip, 
-            leap_yr = leap_yr,
-            read_date_column = read_date_column, 
-            date_column = date_column
-            )
+    if read_date_column:
+        start_year, end_year, data_2D \
+            = matrix_from_xls(
+                file_model_csv, column,cst.days_in_yr, 
+                day_of_year_start = day_of_year_start,
+                skip = rows_of_input_data_to_skip, 
+                filetype=filetype,
+                leap_yr = leap_yr,
+                read_date_column = read_date_column, 
+                date_column = date_column
+                )
+    else:
+        data_2D \
+            = matrix_from_xls(
+                file_model_csv, column,cst.days_in_yr, 
+                day_of_year_start = day_of_year_start,
+                start_year = start_year,
+                skip = rows_of_input_data_to_skip, 
+                filetype=filetype,
+                leap_yr = leap_yr,
+                read_date_column = read_date_column, 
+                date_column = date_column
+                )
+
+    num_years = end_year - start_year + 1
 
 ### UNIT CONVERSION:   
 #    data_2D = data_2D*cst.cfs_to_m3 
