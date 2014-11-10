@@ -2,7 +2,8 @@
 # associated strip charts bottom and right. 
 # Based on code written by Roy Haggerty for Willamette Water 2100
 # project, funded by US National Science Foundation, 
-# grant # EAR-1039192.
+# grant # EAR-1039192.  Extended by Roy Haggerty for 
+# stream carbon project, grant # EAR-1417603.
 # Some code written by Owen Haggerty, summer, 2014.
 # 
 # Reference as:
@@ -16,24 +17,29 @@
 #    matplotlib
 #    xlrd
 #    gspread
-#  
+#    pandas
+# Most of these install with Anaconda by Continuum Analytics,
+#   which can be downloaded at http://www.continuum.io
 
 ########################################################################################
 ########################################################################################
 ########################################################################################
 
 def project_specifications(
-        rows_of_input_data_to_skip=0, filetype='csv', annual_data='True', leap_yr='none',\
+        rows_of_input_data_to_skip=0, filetype='csv', annual_data=True, leap_yr='none',\
         read_date_column=False, date_column = 0
         ):
-    """
-    Set parameters and plot information for specific project
+    """Set parameters and plot information for specific project
+    Returns day_of_year_start, rows_of_input_data_to_skip, filetype,
+    annual_data, leap_yr, read_date_column, date_column
     
-    start_year = first year of data (could be water year)
-    end_year = last year of data (could be water year)
-    day_of_year_start = first day of year to be plotted
-    annual_data = if data are yearly.  Default = True
-    leap_yr = option to treat leap-year. Default = none
+    day_of_year_start -- (int) first day of year to be plotted
+    rows_of_input_data_to_skip -- (int) how many numbers to skip before using data (default 0)
+    filetype -- (str) type of file csv, xls, gsheet. (default csv)
+    annual_data -- (bool) data have a daily - annual cycle (default True)
+    leap_yr -- (str) how to deal with leap years, none or remove (default none)
+    read_date_column -- (bool) data contain date col True or False (default False)
+    date_column -- (int) column where dates are found (default 0)
     """
     import constants as cst   # constants.py contains constants used here
 # Need to specify start_year and end_year if data do not contain dates. 
@@ -136,13 +142,22 @@ def cascade(
             graph_name_png,             #path & name of output png file
             metadata_txt,
             data_type = 'default',      #the type of data
-            Display = False,            #whether the graph is to be displayed(True) or saved as a PNG file(False)
+            Display = False            #whether the graph is to be displayed(True) or saved as a PNG file(False)
             ):
                 
-    """
-    Make a cascade plot and associated side & bottom graphs to show time series
+    """Make a cascade plot and associated side & bottom graphs to show time series
     of discharge.  Shade some of the lines with range of possible values for
     alternative scenarios.
+    
+    file_model_csv -- (str) file to read data from.  Can be csv, xls, or google sheet.  Must include path.
+    column -- (int) column # for data in file
+    title -- (str) title to give cascade plot
+    graph_name_png -- (str) file name for graph, including path
+    metadata_txt -- (str) text to be added to lower right corner of figure as metadata
+    
+    keyword arguments:
+    data_type -- (str) type of data, to be used in processing data, generating axes, etc. (default 'default')
+    Display -- (bool) display cascade plot on screen?  (default False)
     """
     
     import numpy as np
@@ -499,8 +514,7 @@ def check_if_empty(element):
         return True
         
 def paths(master_file):
-    '''
-    Reads in path data from master_file
+    '''Reads in path data from master_file
     '''
     import xlrd
     Path_book = xlrd.open_workbook(master_file)

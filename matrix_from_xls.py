@@ -16,18 +16,18 @@ def matrix_from_xls(
     within your path.
     Need to add gspread from github, and import username and password.
     
-    file_w_path -- filename including path of file. If google sheet, then key.
+    file_w_path -- (str) filename including path of file. If google sheet, then key.
     
     keyword arguments:
-    column -- column number for data (default 0)
-    xcycle -- how many numbers in each row (default 365)
-    day_of_year_start -- for a timeseries, day of year start of 2D array (default 1)
-    skip -- how many numbers to skip before using data (default 0)
-    filetype -- type of file csv, xls/x, gsheet. (default csv)
-    data_type -- type of data annual, daily (default annual)
-    leap_yr -- how to deal with leap years, none or remove (default none)
-    read_date_column -- data contain date col True or False (default False)
-    date_column -- column where dates are found (default 0)
+    column -- (int) column number for data (default 0)
+    xcycle -- (int) how many numbers in each row (default 365)
+    day_of_year_start -- (int) for a timeseries, day of year start of 2D array (default 1)
+    skip -- (int) how many numbers to skip before using data (default 0)
+    filetype -- (str) type of file csv, xls, gsheet. (default csv)
+    data_type -- (str) type of data annual, daily (default annual)
+    leap_yr -- (str) how to deal with leap years, none or remove (default none)
+    read_date_column -- (bool) data contain date col True or False (default False)
+    date_column -- (int) column where dates are found (default 0)
     """
     
     import numpy as np
