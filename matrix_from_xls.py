@@ -1,9 +1,8 @@
 def matrix_from_xls(
     file_w_path,
-    column,
+    column = 0,
     xcycle = 365,
     day_of_year_start=1, 
-    start_year = 2000,
     skip=0,
     filetype='csv',
     data_type='annual', 
@@ -11,20 +10,24 @@ def matrix_from_xls(
     read_date_column=False, 
     date_column=0):
     #Roy Haggerty, 2014
-    """
-    Reads sheet (excel, google, csv) file and produces 2-D matrix
-    Returns 2D numpy array
+    """Reads timeseries sheet (csv, xls/xlsx, google). Returns 2-D numpy array.
     
     If using google sheet, use filetype == 'gsheet'. Make sure gspread is
     within your path.
     Need to add gspread from github, and import username and password.
     
-    file_w_path = filename and location of file. If google sheet, then key
-    column = column number for data
-    xcycle = how many numbers in each row
-    skip = how many numbers to skip before starting to read data
-    filetype = type of file (kwarg). Default is csv.
-    leap_yr = database has leap years to deal with.  Options are 'remove'.
+    file_w_path -- filename including path of file. If google sheet, then key.
+    
+    keyword arguments:
+    column -- column number for data (default 0)
+    xcycle -- how many numbers in each row (default 365)
+    day_of_year_start -- for a timeseries, day of year start of 2D array (default 1)
+    skip -- how many numbers to skip before using data (default 0)
+    filetype -- type of file csv, xls/x, gsheet. (default csv)
+    data_type -- type of data annual, daily (default annual)
+    leap_yr -- how to deal with leap years, none or remove (default none)
+    read_date_column -- data contain date col True or False (default False)
+    date_column -- column where dates are found (default 0)
     """
     
     import numpy as np
@@ -32,7 +35,7 @@ def matrix_from_xls(
     import pandas as pd
     
     if read_date_column:
-        data_col_num = column - date_column - 1
+        data_col_num = column - 1
     
     if filetype != 'gsheet':  # unless it is a google sheet, get filetype from windows extension
         filetype = file_w_path.rsplit('.')[-1]
@@ -41,10 +44,11 @@ def matrix_from_xls(
         if read_date_column:
             df = pd.read_csv(file_w_path, index_col=date_column, parse_dates=[date_column])
             df = df.convert_objects(convert_numeric=True)
-            df.index  = pd.to_datetime(df.index.date)  #
+            df.index  = pd.to_datetime(df.index.date)  #convert to Timestamp, set time to 00
             ts = pd.Series(df.iloc[:,data_col_num],df.index)
             start_date, start_year, end_year \
-                        = start_end_info(ts, skip, day_of_year_start, xcycle)
+                        = start_end_info(ts, skip=skip, \
+                          day_of_year_start=day_of_year_start, xcycle=xcycle)
             data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
                         start_date = start_date)
             return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
@@ -60,8 +64,11 @@ def matrix_from_xls(
         if read_date_column:
             df = pd.read_excel(file_w_path, sheetname=sheetnum, header=rowstart-1, index_col=date_column)
             df = df.convert_objects(convert_numeric=True)
-            df.index  = pd.to_datetime(df.index)
+            df.index  = pd.to_datetime(df.index.date) #convert to Timestamp, set time to 00
             ts = pd.Series(df.iloc[:,data_col_num],df.index)
+            start_date, start_year, end_year \
+                        = start_end_info(ts, skip=skip, \
+                          day_of_year_start=day_of_year_start, xcycle=xcycle)
             data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
                         start_date = start_date)
             return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
@@ -114,9 +121,16 @@ def matrix_from_xls(
             print 'unknown error importing gspread module or reading data'
             raise Exception()
 
-def start_end_info(ts, skip, day_of_year_start, xcycle):
-    """
-    Calculate start and end information needed
+def start_end_info(ts, skip=0, day_of_year_start=1, xcycle=365):
+    """From pandas timeseries, return start_date, start_year, end_year
+    
+    ts -- pandas timeseries with Timestamp and data
+    
+    keyword arguments:
+    xcycle -- how many numbers in each row (default 365)
+    day_of_year_start -- for a timeseries, day of year start of 2D array (default 1)
+    skip -- how many numbers to skip before using data (default 0)    
+    
     """
     import pandas as pd
     import datetime as dt
@@ -154,8 +168,7 @@ def start_end_info(ts, skip, day_of_year_start, xcycle):
     return start_date, start_year, end_year
     
 def data_2D(data_yr_tmp,skip,xcycle):
-    """
-    Convert column of numbers to 2D matrix
+    """ Convert column of numbers to 2D matrix
     """
     import numpy as np
         
@@ -168,8 +181,7 @@ def data_2D(data_yr_tmp,skip,xcycle):
     return data_2D
     
 def timeseries(ts,leap_yr='none',missing_data='pad', start_date = 'none'):
-    """
-    Deal with leap years and data gaps.
+    """Deal with leap years and data gaps.
     
     ts = pandas timeseries data indexed with timestamp
     leap_yr = database has leap years to deal with. Options are 'remove'
