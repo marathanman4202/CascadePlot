@@ -60,7 +60,7 @@ def matrix_from_xls(
         workbook = xlrd.open_workbook(file_w_path)
         # get 0th sheet, column, starting at 1st row
         sheetnum = 0
-        rowstart = 1
+        rowstart = 2
         if read_date_column:
             df = pd.read_excel(file_w_path, sheetname=sheetnum, header=rowstart-1, index_col=date_column)
             df = df.convert_objects(convert_numeric=True)

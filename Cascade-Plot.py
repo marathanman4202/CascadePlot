@@ -49,7 +49,7 @@ def project_specifications(
     day_of_year_start = cst.day_of_year_oct1
         
     read_date_column = True
-#    date_column = 1
+    date_column = 8
 #    filetype = 'gsheet'
     leap_yr = 'remove'
     
@@ -78,6 +78,13 @@ def get_labels(
         right_xlabel = '$Ann \, Precip\,$ [mm]'
         cascade_ylabel = '$Year$'
         bottom_ylabel = '$Avg \, Daily \,$ [mm]'
+        subtitle = ''
+                  
+    elif data_type == 'days_gt_100' :
+        bottom_label = '$Month \, of \, Year$'
+        right_xlabel = '$Num \, Days\,>\,100\,$ [-]' 
+        cascade_ylabel = '$Year$'
+        bottom_ylabel = '$Days > 100 F\,$ [-]'
         subtitle = ''
                   
     elif data_type == 'PAR' :
@@ -127,9 +134,12 @@ def get_labels(
         raise Exception
     
     # Metadata for bottom right corner
+#    metadata_bottomright = metadata_txt +  '\n' \
+#          + 'HJA NSF grant DEB-0832652 and' +  '\n' \
+#          + 'Roy Haggerty NSF grant EAR-1417603' + '\n'\
     metadata_bottomright = metadata_txt +  '\n' \
-          + 'HJA NSF grant DEB-0832652 and' +  '\n' \
-          + 'Roy Haggerty NSF grant EAR-1417603' + '\n'\
+          + 'Steven M. Wondzell' +  '\n' \
+          + 'Big Bend Project' + '\n'\
           + 'Graph generated on ' + str(datetime.date.today()) 
 
     return bottom_label, right_xlabel, cascade_ylabel, bottom_ylabel, \
@@ -233,7 +243,7 @@ def cascade(
     if data_type == 'default' or data_type == 'precip':
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','blue'],256)
     elif data_type == 'minT' or data_type == 'maxT' or data_type =='meanT' or\
-        data_type =='PAR':
+        data_type =='PAR' or data_type == 'days_gt_100':
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white',(0.9,0.1,0.1)],256)
     else:
         cmap1 = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','blue'],256)
@@ -334,7 +344,8 @@ def cascade(
        data_type == 'maxT' or\
        data_type == 'discharge' or\
        data_type == 'chem' or\
-       data_type == 'PAR':
+       data_type == 'PAR' or\
+       data_type == 'days_gt_100':
         ax5.plot(data_set_rhs, range(start_year,end_year+1), color="0.35", lw=1.5)
         plt.xlabel(right_xlabel, fontsize = 14)
         
@@ -433,7 +444,8 @@ def process_data_rhs(data_2D, num_yrs,  \
             window)[averaging_window:-averaging_window]
         data_set_rhs = yearly_max
                
-    elif data_type == 'precip':
+    elif data_type == 'precip' or\
+       data_type == 'days_gt_100':
         precip_sum = list(np.sum(data_2D,axis=1)) 
         precip_sum = movingaverage(
             precip_sum[:averaging_window] + precip_sum + precip_sum[-averaging_window:],
