@@ -46,7 +46,7 @@ def project_specifications(
 #      i.e., if read_date_column = False
 #    start_year = 1998
 #    end_year = 2013
-    day_of_year_start = cst.day_of_year_oct1
+    day_of_year_start = cst.day_of_year_feb1
         
     read_date_column = True
     date_column = 8
@@ -473,7 +473,7 @@ def process_data_bottom(
     #   Prep the data for the bottom strip                   #
     ##########################################################
     
-    averaging_window = 51
+    averaging_window = 50
     window_raw = np.array([])
     window_raw = np.append(window_raw,[n_take_k(averaging_window-1,i) for i in range(averaging_window)])
     window = window_raw / np.sum(window_raw)  # normalized weights
