@@ -46,7 +46,7 @@ def project_specifications(
 #      i.e., if read_date_column = False
 #    start_year = 1998
 #    end_year = 2013
-    day_of_year_start = cst.day_of_year_feb1
+    day_of_year_start = cst.day_of_year_nov1
         
     read_date_column = True
     date_column = 8
@@ -573,7 +573,7 @@ graph_name_v = cascade_plot_params.sheet_by_index(0).col_values(6)[1:total_numbe
 metadata_v = cascade_plot_params.sheet_by_index(0).col_values(7)[1:total_number_of_plots+1]            # metadata credit info
 
 # Make the plots.
-plot_number = -1
+plot_number = -1   # Want first number to be 0, so set to -1 here
 for file in file_name_list: 
     plot_number += 1
     if ToBePlotted[plot_number]:

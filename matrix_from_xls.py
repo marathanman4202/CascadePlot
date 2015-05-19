@@ -8,7 +8,10 @@ def matrix_from_xls(
     data_type='annual', 
     leap_yr='none', 
     read_date_column=False, 
-    date_column=0):
+    date_column=0,
+    movingaveragevec='none',
+    missing_data_flag='none'
+    ):
     #Roy Haggerty, 2014
     """Reads timeseries sheet (csv, xls/xlsx, google). Returns 2-D numpy array.
     
@@ -28,11 +31,13 @@ def matrix_from_xls(
     leap_yr -- (str) how to deal with leap years, none or remove (default none)
     read_date_column -- (bool) data contain date col True or False (default False)
     date_column -- (int) column where dates are found (default 0)
+    missing_data_flag -- integer flag that identifies missing or bad data (default none)
     """
     
     import numpy as np
     import xlrd
     import pandas as pd
+    from movingaverage import movingaverage
     
     if read_date_column:
         data_col_num = column - 1
@@ -50,7 +55,9 @@ def matrix_from_xls(
                         = start_end_info(ts, skip=skip, \
                           day_of_year_start=day_of_year_start, xcycle=xcycle)
             data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
-                        start_date = start_date)
+                        start_date = start_date, missing_data_flag = missing_data_flag)
+            if movingaveragevec != 'none':
+                data_yr_tmp = movingaverage(data_yr_tmp, movingaveragevec) 
             return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
         else:
             data_tmp = np.array(np.genfromtxt(file_w_path, delimiter=',',skip_header=1)) # Read csv file
@@ -60,7 +67,7 @@ def matrix_from_xls(
         workbook = xlrd.open_workbook(file_w_path)
         # get 0th sheet, column, starting at 1st row
         sheetnum = 0
-        rowstart = 2
+        rowstart = 1
         if read_date_column:
             df = pd.read_excel(file_w_path, sheetname=sheetnum, header=rowstart-1, index_col=date_column)
             df = df.convert_objects(convert_numeric=True)
@@ -70,7 +77,7 @@ def matrix_from_xls(
                         = start_end_info(ts, skip=skip, \
                           day_of_year_start=day_of_year_start, xcycle=xcycle)
             data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
-                        start_date = start_date)
+                        start_date = start_date, missing_data_flag = missing_data_flag)
             return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
         else:
             data_yr_tmp = np.array(workbook.sheet_by_index(sheetnum).col_values(column)[rowstart:])
@@ -92,7 +99,7 @@ def matrix_from_xls(
                 print data_col_num
                 ts = pd.Series(df.iloc[:,data_col_num],df.index)
                 data_yr_tmp = timeseries(ts,leap_yr=leap_yr,missing_data='bfill',
-                            start_date = start_date)
+                            start_date = start_date, missing_data_flag = missing_data_flag)
                 return start_year, end_year, data_2D(data_yr_tmp,skip,xcycle)
             else:
                 data_str = np.array(sheet.get_all_values())
@@ -180,12 +187,13 @@ def data_2D(data_yr_tmp,skip,xcycle):
     data_2D = np.reshape(np.array(data_yr), (-1,xcycle)) #2D matrix of data in numpy format
     return data_2D
     
-def timeseries(ts,leap_yr='none',missing_data='pad', start_date = 'none'):
+def timeseries(ts,leap_yr='none',missing_data='pad', start_date = 'none', missing_data_flag = 'none'):
     """Deal with leap years and data gaps.
     
     ts = pandas timeseries data indexed with timestamp
     leap_yr = database has leap years to deal with. Options are 'remove'
     missing_data = database has mssing data.  Options are same as methods for pandas.Series.fillna
+    missing_data_flag -- integer flag for missing data
     """
     import numpy as np
     import pandas as pd
@@ -214,9 +222,11 @@ def timeseries(ts,leap_yr='none',missing_data='pad', start_date = 'none'):
     else:
         print 'leap_yr contains unknown option'
         raise Exception()
+    if missing_data != 'none':  ts = ts.replace(missing_data_flag,np.nan) # replace missing data with NaN
     ts = ts.fillna(method=missing_data)
     if start_date != 'none':
         ts = ts.loc[start_date:]
     data_yr_tmp = np.array(ts)
     
     return data_yr_tmp
+    
