@@ -49,7 +49,6 @@ def project_specifications(
     day_of_year_start = cst.day_of_year_nov1
         
     read_date_column = True
-    date_column = 8
 #    filetype = 'gsheet'
     leap_yr = 'remove'
     
@@ -138,8 +137,6 @@ def get_labels(
 #          + 'HJA NSF grant DEB-0832652 and' +  '\n' \
 #          + 'Roy Haggerty NSF grant EAR-1417603' + '\n'\
     metadata_bottomright = metadata_txt +  '\n' \
-          + 'Steven M. Wondzell' +  '\n' \
-          + 'Big Bend Project' + '\n'\
           + 'Graph generated on ' + str(datetime.date.today()) 
 
     return bottom_label, right_xlabel, cascade_ylabel, bottom_ylabel, \
