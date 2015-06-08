@@ -8,6 +8,7 @@ def matrix_from_xls(
     data_type='annual', 
     leap_yr='none', 
     read_date_column=False, 
+    start_year = None,
     date_column=0,
     movingaveragevec='none',
     missing_data_flag='none'

@@ -44,16 +44,16 @@ def project_specifications(
     import constants as cst   # constants.py contains constants used here
 # Need to specify start_year and end_year if data do not contain dates. 
 #      i.e., if read_date_column = False
-#    start_year = 1998
-#    end_year = 2013
-    day_of_year_start = cst.day_of_year_nov1
+    start_year = 1950  #6/8/2015
+    end_year = 2010    #6/8/2015
+    day_of_year_start = cst.day_of_year_jan1
         
-    read_date_column = True
+    read_date_column = False   #6/8/2015
 #    filetype = 'gsheet'
     leap_yr = 'remove'
     
     return \
-    day_of_year_start,\
+    day_of_year_start,start_year,end_year,\
     rows_of_input_data_to_skip,filetype,\
     annual_data, leap_yr, read_date_column, date_column
 
@@ -178,7 +178,7 @@ def cascade(
     np.set_printoptions(precision=3) 
 
 # Set parameters and plot information for specific project:
-    day_of_year_start,\
+    day_of_year_start,start_year,end_year,\
     rows_of_input_data_to_skip, filetype,\
     annual_data, leap_yr, read_date_column, date_column \
     = project_specifications()
@@ -200,7 +200,6 @@ def cascade(
             = matrix_from_xls(
                 file_model_csv, column,cst.days_in_yr, 
                 day_of_year_start = day_of_year_start,
-                start_year = start_year,
                 skip = rows_of_input_data_to_skip, 
                 filetype=filetype,
                 leap_yr = leap_yr,
